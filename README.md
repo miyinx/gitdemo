@@ -17,7 +17,7 @@
 
 ### 发送端功能
 
-​![image](image-20250417000822-hkyirp8.png)​
+​![image](BroadcastSender.png)​
 
 * **视频多源输入切换**
 
@@ -72,10 +72,13 @@
   * 断流自动恢复（接收超时重连）
 
 ### 监控工具
+​![image](monitor.png)
 - 实时带宽统计（视频/音频/总计）
 - 可视化流量曲线
 - 可调整刷新频率
 
+## ♨ 相关结构
+### 采用sc结构
 ```mermaid
 graph TD
     A[发送端] -->|UDP广播| B[接收端]
@@ -90,7 +93,34 @@ graph TD
         B1 --> B3[音频解压播放]
     end
 ```
-
+### 核心流程
+```mermaid
+sequenceDiagram
+    participant GUI
+    participant VideoThread
+    participant AudioThread
+    participant Network
+  
+    GUI->>VideoThread: 启动视频线程
+    activate VideoThread
+    VideoThread->>Network: 发送start标记
+    loop 帧循环
+        VideoThread->>VideoThread: 捕获屏幕/摄像头
+        VideoThread->>VideoThread: 压缩图像数据
+        VideoThread->>Network: 分块发送数据
+    end
+    VideoThread->>Network: 发送_over标记
+    deactivate VideoThread
+  
+    GUI->>AudioThread: 启动音频线程
+    activate AudioThread
+    loop 音频采集
+        AudioThread->>AudioThread: 读取音频流
+        AudioThread->>AudioThread: 压缩音频数据
+        AudioThread->>Network: 发送至22223端口
+    end
+    deactivate AudioThread
+```
 ## 🛠️ 运行环境
 
 ```bash
